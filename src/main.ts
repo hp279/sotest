@@ -10,7 +10,7 @@ const log = function (msg) {
 }
 
 const error = function (msg) {
-    console.error(msg);
+    console.log("Error: " + msg);
     debugHtml.push(msg);
 }
 
@@ -26,7 +26,6 @@ class SampleFunctions {
                 log(greet);
             }, index * 1000);
         })
-
     }
 
     func2() {
@@ -79,29 +78,58 @@ class SampleFunctions {
         log('func5 end');
     }
 
-    funcArray() {
-        let result = [];
-        result.push(this.func1.bind(this, ['Hello', 'Bonjour', 'Guten Tag']));
-        result.push(this.func2);
-        result.push(this.func3);
-        result.push(this.func4);
-        result.push(this.func5);
+    func6() {
+        log('func6: func with error');
+        return 6 / 0;
+        log('func6 end');
+    }
 
-        return result;
+    func7() {
+        log('func7: func with rejection');
+        return Promise.reject(new Error("func 7 : reject")).then((success) => {
+        }, (error) => {
+            log(error);
+        })
+    }
+
+    func8() {
+        log('func8: xhr error');
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'https://badaddress.com/posts', true);
+
+        xhr.onreadystatechange = function () {
+            if (xhr.status != 200) {
+                error("Error: " + xhr.status + ': ' + xhr.statusText);
+            } else {
+                log(xhr.responseText);
+            }
+        }
+
+        xhr.send(null);
+    }
+
+    funcArray() {
+        let fns = [];
+        fns.push(this.func1.bind(this, ['Hello', 'Bonjour', 'Guten Tag']));
+        fns.push(this.func2);
+        fns.push(this.func3);
+        fns.push(this.func4);
+        fns.push(this.func5);
+        fns.push(this.func6);
+        fns.push(this.func7);
+        // fns.push(this.func8);
+        return fns;
     }
 }
 
 class AsyncFunctionsExecutor {
-
-    constructor() {
-    }
-
     waitForAll(array) {
         const originalSetTimeout = window.setTimeout;
-        const waitForTimeOuts = [];
+
+        const waitFor = [];
 
         window.setTimeout = (callback, delay) => {
-            waitForTimeOuts.push(new Promise((resolve, reject) => {
+            waitFor.push(new Promise((resolve, reject) => {
                     originalSetTimeout(() => {
                         log("It is custom setTimeout");
                         callback();
@@ -111,36 +139,31 @@ class AsyncFunctionsExecutor {
             ));
         }
 
-        const arrayToExecute = array.map((toExecute) => {
-            if (!!toExecute() && (typeof toExecute() === 'object' || typeof toExecute() === 'function') && typeof toExecute().then === 'function') {
-                return toExecute;
-            } else {
-                return new Promise((resolve) => {
-                    toExecute()
-                    resolve();
-                })
-            }
-        })
-
         let commonLength = 0;
 
-        let result = (_waitForTimeOuts) => {
-            commonLength += _waitForTimeOuts.length;
-            return Promise.all(array.concat(_waitForTimeOuts)).then(() => {
-                if (commonLength < waitForTimeOuts.length) {
-                    return result([].concat(waitForTimeOuts.filter((i) => {
-                        return _waitForTimeOuts.indexOf(i) < 0;
+        const waitSetTimeOuts = (_waitFor) => {
+            commonLength += _waitFor.length;
+            return Promise.all(_waitFor).then(() => {
+                if (commonLength < waitFor.length) {
+                    return waitSetTimeOuts([].concat(waitFor.filter((i) => {
+                        return _waitFor.indexOf(i) < 0;
                     })));
                 }
             });
         }
 
-        return result([].concat(waitForTimeOuts)).then(() => {
-            window.setTimeout = originalSetTimeout;
-            setTimeout(function () {
-                log("It is original settimeout");
-            }, 100)
+        array.forEach((toExecute) => {
+            toExecute();
         })
+
+        return waitSetTimeOuts([].concat(waitFor)).then(() => {
+            window.setTimeout = originalSetTimeout;
+
+            setTimeout(function () {
+                log("It is original setTimeout");
+            }, 100);
+        })
+
     }
 }
 
@@ -150,6 +173,7 @@ window.onload = function () {
 
     functionsExecutor.waitForAll(sampleFunctions.funcArray()).then(() => {
         log('Completed!');
+
         let resultHtml = '';
         debugHtml.forEach((msg) => {
             resultHtml += '<p>' + msg + '</p>';
