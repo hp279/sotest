@@ -9,8 +9,8 @@ const log = function (msg) {
     debugHtml.push(msg);
 }
 
-const error = function (msg) {
-    console.log("Error: " + msg);
+const printError = function (msg) {
+    console.log(`Error: ${msg}`);
     debugHtml.push(msg);
 }
 
@@ -59,8 +59,8 @@ class SampleFunctions {
         xhr.open('GET', 'https://jsonplaceholder.typicode.com/posts', true);
 
         xhr.onreadystatechange = function () {
-            if (xhr.status != 200) {
-                error(xhr.status + ': ' + xhr.statusText);
+            if (xhr.status !== 200) {
+                printError(xhr.status + ': ' + xhr.statusText);
             } else {
                 if (xhr.readyState === 4) {
                     const toShow = 1000;
@@ -84,12 +84,11 @@ class SampleFunctions {
     func6() {
         log('func6: func with error');
         return 6 / 0;
-        log('func6 end');
     }
 
     func7() {
         log('func7: func with rejection');
-        return Promise.reject(new Error("func 7 : reject")).then((success) => {
+        return Promise.reject(new Error('func 7 : reject')).then((success) => {
         }, (error) => {
             log(error);
         })
@@ -101,8 +100,8 @@ class SampleFunctions {
         xhr.open('GET', 'https://badaddress.com/posts', true);
 
         xhr.onreadystatechange = function () {
-            if (xhr.status != 200) {
-                error("Error: " + xhr.status + ': ' + xhr.statusText);
+            if (xhr.status !== 200) {
+                printError(`Error: ${xhr.status}: ${xhr.statusText}`);
             } else {
                 log(xhr.responseText);
             }
@@ -132,9 +131,9 @@ class AsyncFunctionsExecutor {
         const waitFor = [];
 
         window.setTimeout = (callback, delay) => {
-            var promise = new Promise((resolve, reject) => {
+            const promise = new Promise((resolve, reject) => {
                 originalSetTimeout(() => {
-                    log("It is custom setTimeout");
+                    log('It is custom setTimeout');
                     callback();
                     waitFor.splice(waitFor.indexOf.bind(null, promise), 1);
                     resolve();
@@ -144,10 +143,10 @@ class AsyncFunctionsExecutor {
             waitFor.push(promise);
         }
 
-        const waitSetTimeOuts = (_waitFor) => {
-            return Promise.all(_waitFor).then(() => {
+        const waitSetTimeOuts = () => {
+            return Promise.all(waitFor).then(() => {
                 if (waitFor.length > 0) {
-                    return waitSetTimeOuts([].concat(waitFor));
+                    return waitSetTimeOuts();
                 }
             });
         }
@@ -156,11 +155,11 @@ class AsyncFunctionsExecutor {
             toExecute();
         })
 
-        return waitSetTimeOuts([].concat(waitFor)).then(() => {
+        return waitSetTimeOuts().then(() => {
             window.setTimeout = originalSetTimeout;
 
             setTimeout(function () {
-                log("It is original setTimeout");
+                log('It is original setTimeout');
             }, 100);
         })
     }
@@ -177,6 +176,6 @@ window.onload = function () {
         debugHtml.forEach((msg) => {
             resultHtml += '<p>' + msg + '</p>';
         })
-        document.getElementById("result").innerHTML = resultHtml;
+        document.getElementById('result').innerHTML = resultHtml;
     })
 };
