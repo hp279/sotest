@@ -62,14 +62,25 @@ class SampleFunctions {
             if (xhr.status !== 200) {
                 printError(xhr.status + ': ' + xhr.statusText);
             } else {
-                if (xhr.readyState === 4) {
-                    const toShow = 1000;
-                    log(xhr.responseText.substring(0, toShow) + (xhr.responseText.length > toShow ? '...' : ''));
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    setTimeout(function () {
+                        log('func 4 1!');
+                        const toShow = 1000;
+                        log(xhr.responseText.substring(0, toShow) + (xhr.responseText.length > toShow ? '...' : ''));
+                    }, 2000);
                 }
             }
         }
 
-        xhr.send(null);
+        xhr.onerror = function (e) {
+            printError(e);
+        };
+
+        try {
+            xhr.send(null);
+        } catch (e) {
+            printError(`Error: ${e}`);
+        }
     }
 
     func5() {
@@ -90,7 +101,7 @@ class SampleFunctions {
         log('func7: func with rejection');
         return Promise.reject(new Error('func 7 : reject')).then((success) => {
         }, (error) => {
-            log(error);
+            printError(error);
         })
     }
 
@@ -103,11 +114,18 @@ class SampleFunctions {
             if (xhr.status !== 200) {
                 printError(`Error: ${xhr.status}: ${xhr.statusText}`);
             } else {
-                log(xhr.responseText);
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    const toShow = 1000;
+                    log(xhr.responseText.substring(0, toShow) + (xhr.responseText.length > toShow ? '...' : ''));
+                }
             }
         }
 
-        xhr.send(null);
+        try {
+            xhr.send(null);
+        } catch (e) {
+            printError(`Error: ${e}`);
+        }
     }
 
     funcArray() {
@@ -119,14 +137,16 @@ class SampleFunctions {
         fns.push(this.func5);
         fns.push(this.func6);
         fns.push(this.func7);
-        // fns.push(this.func8);
+        //fns.push(this.func8);
         return fns;
     }
 }
 
 class AsyncFunctionsExecutor {
     waitForAll(array) {
+        const start = new Date().getTime();
         const originalSetTimeout = window.setTimeout;
+        const origXHROpen = XMLHttpRequest.prototype.open;
 
         const waitFor = [];
 
@@ -143,6 +163,10 @@ class AsyncFunctionsExecutor {
             waitFor.push(promise);
         }
 
+        XMLHttpRequest.prototype.open = function (method, url, async, user, password) {
+            return origXHROpen.call(this, method, url, false, user, password);
+        };
+
         const waitSetTimeOuts = () => {
             return Promise.all(waitFor).then(() => {
                 if (waitFor.length > 0) {
@@ -155,13 +179,19 @@ class AsyncFunctionsExecutor {
             toExecute();
         })
 
-        return waitSetTimeOuts().then(() => {
+        const revertOrigins = () => {
             window.setTimeout = originalSetTimeout;
+            XMLHttpRequest.prototype.open = origXHROpen;
+        }
 
-            setTimeout(function () {
-                log('It is original setTimeout');
-            }, 100);
-        })
+        return waitSetTimeOuts().then(() => {
+            return Promise.all(array).then(() => {
+                revertOrigins();
+                return (new Date().getTime() - start);
+            })
+        }).catch(function (error) {
+            revertOrigins();
+        });
     }
 }
 
@@ -169,13 +199,17 @@ window.onload = function () {
     const sampleFunctions = new SampleFunctions();
     const functionsExecutor = new AsyncFunctionsExecutor();
 
-    functionsExecutor.waitForAll(sampleFunctions.funcArray()).then(() => {
-        log('Completed!');
+    functionsExecutor.waitForAll(sampleFunctions.funcArray()).then((executionTime) => {
+        log(`Completed! Execution time ${executionTime} ms`);
 
         let resultHtml = '';
         debugHtml.forEach((msg) => {
-            resultHtml += '<p>' + msg + '</p>';
+            resultHtml += '<p style="font-size: 12px;">' + msg + '</p>';
         })
         document.getElementById('result').innerHTML = resultHtml;
+
+        setTimeout(function () {
+            console.log('It is original setTimeout');
+        }, 100);
     })
 };
