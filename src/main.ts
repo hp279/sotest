@@ -62,7 +62,8 @@ class SampleFunctions {
             if (xhr.status != 200) {
                 error(xhr.status + ': ' + xhr.statusText);
             } else {
-                log(xhr.responseText);
+                const toShow = 1000;
+                log(xhr.responseText.substring(0, toShow) + (xhr.responseText.length > toShow ? '...' : '');
             }
         }
 
