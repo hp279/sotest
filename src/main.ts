@@ -62,8 +62,10 @@ class SampleFunctions {
             if (xhr.status != 200) {
                 error(xhr.status + ': ' + xhr.statusText);
             } else {
-                const toShow = 1000;
-                log(xhr.responseText.substring(0, toShow) + (xhr.responseText.length > toShow ? '...' : '');
+                if (xhr.readyState === 4) {
+                    const toShow = 1000;
+                    log(xhr.responseText.substring(0, toShow) + (xhr.responseText.length > toShow ? '...' : ''));
+                }
             }
         }
 
@@ -130,25 +132,22 @@ class AsyncFunctionsExecutor {
         const waitFor = [];
 
         window.setTimeout = (callback, delay) => {
-            waitFor.push(new Promise((resolve, reject) => {
-                    originalSetTimeout(() => {
-                        log("It is custom setTimeout");
-                        callback();
-                        resolve();
-                    }, delay);
-                }
-            ));
+            var promise = new Promise((resolve, reject) => {
+                originalSetTimeout(() => {
+                    log("It is custom setTimeout");
+                    callback();
+                    waitFor.splice(waitFor.indexOf.bind(null, promise), 1);
+                    resolve();
+                }, delay);
+            })
+
+            waitFor.push(promise);
         }
 
-        let commonLength = 0;
-
         const waitSetTimeOuts = (_waitFor) => {
-            commonLength += _waitFor.length;
             return Promise.all(_waitFor).then(() => {
-                if (commonLength < waitFor.length) {
-                    return waitSetTimeOuts([].concat(waitFor.filter((i) => {
-                        return _waitFor.indexOf(i) < 0;
-                    })));
+                if (waitFor.length > 0) {
+                    return waitSetTimeOuts([].concat(waitFor));
                 }
             });
         }
@@ -164,7 +163,6 @@ class AsyncFunctionsExecutor {
                 log("It is original setTimeout");
             }, 100);
         })
-
     }
 }
 
