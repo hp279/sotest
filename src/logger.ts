@@ -1,6 +1,6 @@
 'use strict'
 
-import * as ILogger from 'i-logger';
+import {ILogger} from 'i-logger';
 
 export default class CustomLogger implements ILogger {
     private static _instance: CustomLogger = new CustomLogger();

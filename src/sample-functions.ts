@@ -1,7 +1,7 @@
 'use strict'
 
-import ILogger from 'i-logger';
-import DefaultAsyncFunctionsExecutorLogger from 'i-logger';
+import {ILogger} from 'i-logger';
+import DefaultAsyncFunctionsExecutorLogger from 'default-logger';
 
 export default class SampleFunctions {
     private logger;
@@ -140,9 +140,9 @@ export default class SampleFunctions {
         fns.push(this.func3.bind(this));
         fns.push(this.func4.bind(this));
         fns.push(this.func5.bind(this));
-      //  fns.push(this.func8.bind(this));
         fns.push(this.func6.bind(this));
         fns.push(this.func7.bind(this));
+        fns.push(this.func8.bind(this));
 
         return fns;
     }

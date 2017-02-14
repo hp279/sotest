@@ -1,8 +1,8 @@
 'use strict'
 
 import * as _ from 'lodash';
-import ILogger from 'i-logger';
-import DefaultAsyncFunctionsExecutorLogger from 'i-logger';
+import {ILogger} from 'i-logger';
+import DefaultAsyncFunctionsExecutorLogger from 'default-logger';
 
 export default class AsyncFunctionsExecutor {
     private logger;
@@ -20,15 +20,31 @@ export default class AsyncFunctionsExecutor {
         let count: number = 0;
 
         const start = new Date().getTime();
-        const originalSetTimeout = window.setTimeout;
-
         let waitFor = [];
 
-        window.setTimeout = (callback, delay) => {
+        window._oldSetTimeout = window.setTimeout;
+        window.setTimeout = function(closureOrText, delay) {
+            const funcArgs = [];
+            for (let index = 2; index < arguments.length; index++) {
+                funcArgs.push(arguments[index]);
+            }
+            let callback = closureOrText;
+            if (arguments.length <= 2 || typeof closureOrText != "function") {
+                if (arguments.length <= 2 || typeof closureOrText == "string") {
+                    callback = closureOrText;
+                }
+                else {
+                    //hack for IE system functions
+                  callback = _timeoutCallbackForSystemFunction(closureOrText, funcArgs);
+                }
+            }
+            else {
+                callback = _timeoutCallback(closureOrText, funcArgs);
+            }
+
             const promiseIndex = count++;
             const promise = new Promise((resolve, reject) => {
-                originalSetTimeout(() => {
-                    debugger;
+                _oldSetTimeout(() => {
                     self.logger.log(`it is custom setTimeout <b>${promiseIndex}</b>`);
                     try {
                         callback();
@@ -38,9 +54,29 @@ export default class AsyncFunctionsExecutor {
                     }
                 }, delay);
             })
-            self.logger.log(`<span style="color: red">${promiseIndex} promise was created NOW!</span><br><small>${callback}</small>`);
+            self.logger.log(`<span style="color: red">${promiseIndex} promise was created NOW!</span><br><small>${closureOrText}</small>`);
             waitFor.push({promiseIndex: promiseIndex, promise: promise});
-        }
+        };
+
+        window._timeoutCallback = function(closure, argArray) {
+            return function() {
+                closure.apply(this, argArray);
+            };
+        };
+
+        window._timeoutCallbackForSystemFunction = function(closure, argArray) {
+            return function() {
+                if (argArray.length == 1) {
+                    closure(argArray[0]);
+                }
+                else if (argArray.length == 2) {
+                    closure(argArray[0], argArray[1]);
+                }
+                else {
+                    alert("WARN:  Too many arguments passed to system function; timeout callback not executed!");
+                }
+            };
+        };
 
         !function (send) {
             XMLHttpRequest.prototype.send = function (data) {
@@ -62,7 +98,8 @@ export default class AsyncFunctionsExecutor {
                             })
                             self.logger.log(`<span style="color: blueviolet">${promiseIndex} promise was created NOW!</span>`);
                             waitFor.push({promiseIndex: promiseIndex, promise: promise});
-                        } else {
+                        }
+                        else {
                             onreadystatechange.call(this, a);
                         }
 
@@ -99,11 +136,9 @@ export default class AsyncFunctionsExecutor {
                         `Promise with index <b>${promiseIndex}</b> was resolved!`);
                 })
 
-                console.log(waitFor);
                 waitFor = _.filter(waitFor, (promiseEl) => {
                     return promiseIndexes.indexOf(promiseEl.promiseIndex) === -1;
                 })
-                console.log(waitFor);
                 if (waitFor.length > 0) {
                     return waitSetTimeOuts();
                 }
@@ -115,7 +150,7 @@ export default class AsyncFunctionsExecutor {
         })
 
         const revertOrigins = () => {
-            window.setTimeout = originalSetTimeout;
+            window.setTimeout = window._oldSetTimeout;
         }
 
         return waitSetTimeOuts().then(() => {
