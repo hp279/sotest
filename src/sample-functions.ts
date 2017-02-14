@@ -16,8 +16,8 @@ export default class SampleFunctions {
 
     private func1(arr) {
         const self = this;
-        self.logger.log('func1: simple setTimeout in the loop');
-        [1, 2, 3].forEach(function (index) {
+        self.logger.log('<b style="color: green">Call func1: simple setTimeout in the loop</b>');
+        [1, 2, 3, 4, 5].forEach(function (index) {
             setTimeout(() => {
                 let greet = arr[Math.floor(Math.random() * arr.length)];
                 self.logger.log(greet);
@@ -27,7 +27,7 @@ export default class SampleFunctions {
 
     private func2() {
         const self = this;
-        self.logger.log('func2: nested setTimeout');
+        self.logger.log('<b style="color: green">Call func2: nested setTimeout</b>');
         setTimeout(() => {
             self.logger.log('func 2 1!')
             setTimeout(() => {
@@ -41,7 +41,7 @@ export default class SampleFunctions {
 
     private func3() {
         const self = this;
-        self.logger.log('func3: promise');
+        self.logger.log('<b style="color: green">Call func3: promise</b>');
         return new Promise((resolve, reject) => {
             setTimeout(function () {
                 self.logger.log('func 3 1!');
@@ -54,7 +54,7 @@ export default class SampleFunctions {
 
     private func4() {
         const self = this;
-        self.logger.log('func4: xhr');
+        self.logger.log('<b style="color: green">Call func4: xhr</b>');
         const xhr = new XMLHttpRequest();
         xhr.open('GET', 'https://jsonplaceholder.typicode.com/posts', true);
 
@@ -88,7 +88,7 @@ export default class SampleFunctions {
 
     private func5() {
         const self = this;
-        self.logger.log('func5: sync function');
+        self.logger.log('<b style="color: green">Call func5: sync function</b>');
         let sum = 0;
         for (let i = 0; i < 50000; i++) {
             sum += Math.random();
@@ -98,13 +98,13 @@ export default class SampleFunctions {
 
     private func6() {
         const self = this;
-        self.logger.log('func6: func with error');
+        self.logger.log('<b style="color: green">Call func6: func with error</b>');
         return 6 / 0;
     }
 
     private func7() {
         const self = this;
-        self.logger.log('func7: func with rejection');
+        self.logger.log('<b style="color: green">Call func7: func with rejection</b>');
         return Promise.reject(new Error('func 7 : reject')).then((success) => {
         }, (error) => {
             self.logger.log(error);
@@ -113,7 +113,7 @@ export default class SampleFunctions {
 
     private func8() {
         const self = this;
-        self.logger.log('func8: xhr error');
+        self.logger.log('<b style="color: green">Call func8: xhr error</b>');
         const xhr = new XMLHttpRequest();
         xhr.open('GET', 'https://badaddress.com/posts', true);
 
@@ -134,16 +134,17 @@ export default class SampleFunctions {
 
     public funcArray() {
         const fns = [];
+
         fns.push(this.func1.bind(this, ['Hello', 'Bonjour', 'Guten Tag']));
         fns.push(this.func2.bind(this));
         fns.push(this.func3.bind(this));
         fns.push(this.func4.bind(this));
         fns.push(this.func5.bind(this));
+      //  fns.push(this.func8.bind(this));
         fns.push(this.func6.bind(this));
         fns.push(this.func7.bind(this));
-        fns.push(this.func8.bind(this));
+
         return fns;
     }
 }
-
 

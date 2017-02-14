@@ -15,7 +15,7 @@ export default class AsyncFunctionsExecutor {
         }
     }
 
-    waitForAll(array) {
+    public waitForAll(array) {
         const self = this;
         let count: number = 0;
 
@@ -28,12 +28,17 @@ export default class AsyncFunctionsExecutor {
             const promiseIndex = count++;
             const promise = new Promise((resolve, reject) => {
                 originalSetTimeout(() => {
-                    self.logger.log('it is custom setTimeout ' + promiseIndex);
-                    callback();
-                    resolve(promiseIndex);
+                    debugger;
+                    self.logger.log(`it is custom setTimeout <b>${promiseIndex}</b>`);
+                    try {
+                        callback();
+                    } finally {
+                        self.logger.log(`<span style="color: blue"><b>${promiseIndex}</b> resolved NOW!</span>`);
+                        resolve(promiseIndex);
+                    }
                 }, delay);
             })
-
+            self.logger.log(`<span style="color: red">${promiseIndex} promise was created NOW!</span><br><small>${callback}</small>`);
             waitFor.push({promiseIndex: promiseIndex, promise: promise});
         }
 
@@ -47,10 +52,15 @@ export default class AsyncFunctionsExecutor {
                             const promiseIndex = count++;
                             const promise = new Promise((resolve, reject) => {
                                 self.logger.log(
-                                    `It is custom onreadystatechange resolved  ${promiseIndex} ${ xhr.responseURL}`);
-                                onreadystatechange.call(this, a);
-                                resolve(promiseIndex);
+                                    `It is custom onreadystatechange resolved <b>${promiseIndex}</b> ${ xhr.responseURL}`);
+                                try {
+                                    onreadystatechange.call(this, a);
+                                } finally {
+                                    self.logger.log(`<span style="color: blue">${promiseIndex} resolved NOW!</span>`);
+                                    resolve(promiseIndex);
+                                }
                             })
+                            self.logger.log(`<span style="color: blueviolet">${promiseIndex} promise was created NOW!</span>`);
                             waitFor.push({promiseIndex: promiseIndex, promise: promise});
                         } else {
                             onreadystatechange.call(this, a);
@@ -64,24 +74,36 @@ export default class AsyncFunctionsExecutor {
                         const promiseIndex = count++;
                         const promise = new Promise((resolve, reject) => {
                             self.logger.log(
-                                `It is custom onreadystatechange rejected  ${promiseIndex} ${ xhr.responseURL}`);
-                            onerror.call(this, a);
-                            resolve(promiseIndex);
+                                `It is custom onreadystatechange rejected <b>${promiseIndex}</b> ${ xhr.responseURL}`);
+                            try {
+                                onerror.call(this, a);
+                            } finally {
+                                self.logger.log(`<span style="color: blue"><b>${promiseIndex}</b> resolved NOW!</span>`);
+                                resolve(promiseIndex);
+                            }
                         })
+                        self.logger.log(`<span style="color: darkmagenta">${promiseIndex} promise was created NOW!</span>`);
                         waitFor.push({promiseIndex: promiseIndex, promise: promise});
                     }
                 }(xhr.onreadystatechange);
 
-                send.call(this, data);
+                send.call(xhr, data);
             }
         }(XMLHttpRequest.prototype.send);
 
         const waitSetTimeOuts = () => {
-            return Promise.all(_.map(waitFor, 'promise')).then((values) => {
-                self.logger.log(values);
-                waitFor = _.filter(waitFor, (promiseEl) => {
-                    return values.indexOf(promiseEl.promiseIndex) === -1;
+            return Promise.all(_.map(waitFor, 'promise')).then((promiseIndexes) => {
+                self.logger.log('<b>Result of Promise.all calling:</b>');
+                _.each(promiseIndexes, (promiseIndex) => {
+                    self.logger.log(
+                        `Promise with index <b>${promiseIndex}</b> was resolved!`);
                 })
+
+                console.log(waitFor);
+                waitFor = _.filter(waitFor, (promiseEl) => {
+                    return promiseIndexes.indexOf(promiseEl.promiseIndex) === -1;
+                })
+                console.log(waitFor);
                 if (waitFor.length > 0) {
                     return waitSetTimeOuts();
                 }
