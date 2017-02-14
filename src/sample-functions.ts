@@ -1,61 +1,72 @@
 'use strict'
 
-import CustomLogger from 'logger';
-const customLogger = CustomLogger.getInstance();
+import ILogger from 'i-logger';
+import DefaultAsyncFunctionsExecutorLogger from 'i-logger';
 
 export default class SampleFunctions {
-    constructor() {
+    private logger;
+
+    public constructor(customLogger: ILogger) {
+        if (customLogger == null) {
+            this.logger = new DefaultAsyncFunctionsExecutorLogger();
+        } else {
+            this.logger = customLogger;
+        }
     }
 
-    func1(arr) {
-        customLogger.log('func1: simple setTimeout in the loop');
+    private func1(arr) {
+        const self = this;
+        self.logger.log('func1: simple setTimeout in the loop');
         [1, 2, 3].forEach(function (index) {
             setTimeout(() => {
                 let greet = arr[Math.floor(Math.random() * arr.length)];
-                customLogger.log(greet);
+                self.logger.log(greet);
             }, index * 1000);
         })
     }
 
-    func2() {
-        customLogger.log('func2: nested setTimeout');
+    private func2() {
+        const self = this;
+        self.logger.log('func2: nested setTimeout');
         setTimeout(() => {
-            customLogger.log('func 2 1!')
+            self.logger.log('func 2 1!')
             setTimeout(() => {
-                customLogger.log('func 2 2!');
+                self.logger.log('func 2 2!');
                 setTimeout(() => {
-                    customLogger.log('func 2 3!');
+                    self.logger.log('func 2 3!');
                 }, 1000);
             }, 1000);
         }, 1000);
     }
 
-    func3() {
-        customLogger.log('func3: promise');
+    private func3() {
+        const self = this;
+        self.logger.log('func3: promise');
         return new Promise((resolve, reject) => {
             setTimeout(function () {
-                customLogger.log('func 3 1!');
+                self.logger.log('func 3 1!');
                 resolve();
             }, 1000);
         }).then(() => {
-            customLogger.log('func 3 2!');
+            self.logger.log('func 3 2!');
         })
     }
 
-    func4() {
-        customLogger.log('func4: xhr');
+    private func4() {
+        const self = this;
+        self.logger.log('func4: xhr');
         const xhr = new XMLHttpRequest();
         xhr.open('GET', 'https://jsonplaceholder.typicode.com/posts', true);
 
         xhr.onreadystatechange = function () {
             if (xhr.status !== 200) {
-                customLogger.printError(xhr.status + ': ' + xhr.statusText);
+                self.logger.log(xhr.status + ': ' + xhr.statusText);
             } else {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
                     setTimeout(function () {
-                        customLogger.log('func 4 1!');
+                        self.logger.log('func 4 1!');
                         const toShow = 1000;
-                        customLogger.log(xhr.responseText.substring(0, toShow) +
+                        self.logger.log(xhr.responseText.substring(0, toShow) +
                             (xhr.responseText.length > toShow ? '...' : ''));
                     }, 2000);
                 }
@@ -63,73 +74,76 @@ export default class SampleFunctions {
         }
 
         xhr.onerror = function (e) {
-            customLogger.printError(e);
+            self.logger.log(e);
         };
 
         try {
-            xhr.send(null);
+            setTimeout(function () {
+                xhr.send(null);
+            }, 2000);
         } catch (e) {
-            customLogger.printError(`Error: ${e}`);
+            self.logger.log(`Error: ${e}`);
         }
     }
 
-    func5() {
-        customLogger.log('func5: sync function');
+    private func5() {
+        const self = this;
+        self.logger.log('func5: sync function');
         let sum = 0;
         for (let i = 0; i < 50000; i++) {
             sum += Math.random();
         }
-        customLogger.log('func5 end');
+        self.logger.log('func5 end');
     }
 
-    func6() {
-        customLogger.log('func6: func with error');
+    private func6() {
+        const self = this;
+        self.logger.log('func6: func with error');
         return 6 / 0;
     }
 
-    func7() {
-        customLogger.log('func7: func with rejection');
+    private func7() {
+        const self = this;
+        self.logger.log('func7: func with rejection');
         return Promise.reject(new Error('func 7 : reject')).then((success) => {
         }, (error) => {
-            customLogger.printError(error);
+            self.logger.log(error);
         })
     }
 
-    func8() {
-        customLogger.log('func8: xhr error');
+    private func8() {
+        const self = this;
+        self.logger.log('func8: xhr error');
         const xhr = new XMLHttpRequest();
         xhr.open('GET', 'https://badaddress.com/posts', true);
 
         xhr.onreadystatechange = function () {
             if (xhr.status !== 200) {
-                customLogger.printError(`Error: ${xhr.status}: ${xhr.statusText}`);
+                self.logger.log(`Error: ${xhr.status}: ${xhr.statusText}`);
             } else {
                 if (xhr.readyState === XMLHttpRequest.DONE) {
                     const toShow = 1000;
-                    customLogger.log(xhr.responseText.substring(0, toShow) +
+                    self.logger.log(xhr.responseText.substring(0, toShow) +
                         (xhr.responseText.length > toShow ? '...' : ''));
                 }
             }
         }
 
-        try {
-            xhr.send(null);
-        } catch (e) {
-            customLogger.printError(`Error: ${e}`);
-        }
+        xhr.send(null);
     }
 
-    funcArray() {
-        let fns = [];
+    public funcArray() {
+        const fns = [];
         fns.push(this.func1.bind(this, ['Hello', 'Bonjour', 'Guten Tag']));
-        fns.push(this.func2);
-        fns.push(this.func3);
-        fns.push(this.func4);
-        fns.push(this.func5);
-        fns.push(this.func6);
-        fns.push(this.func7);
-        fns.push(this.func8);
+        fns.push(this.func2.bind(this));
+        fns.push(this.func3.bind(this));
+        fns.push(this.func4.bind(this));
+        fns.push(this.func5.bind(this));
+        fns.push(this.func6.bind(this));
+        fns.push(this.func7.bind(this));
+        fns.push(this.func8.bind(this));
         return fns;
     }
 }
+
 

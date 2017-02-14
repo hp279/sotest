@@ -1,13 +1,22 @@
 'use strict'
 
 import * as _ from 'lodash';
-
-import CustomLogger from 'logger';
-
-const customLogger = CustomLogger.getInstance();
+import ILogger from 'i-logger';
+import DefaultAsyncFunctionsExecutorLogger from 'i-logger';
 
 export default class AsyncFunctionsExecutor {
+    private logger;
+
+    constructor(customLogger: ILogger) {
+        if (customLogger == null) {
+            this.logger = new DefaultAsyncFunctionsExecutorLogger();
+        } else {
+            this.logger = customLogger;
+        }
+    }
+
     waitForAll(array) {
+        const self = this;
         let count: number = 0;
 
         const start = new Date().getTime();
@@ -19,7 +28,7 @@ export default class AsyncFunctionsExecutor {
             const promiseIndex = count++;
             const promise = new Promise((resolve, reject) => {
                 originalSetTimeout(() => {
-                    customLogger.log('it is custom setTimeout ' + promiseIndex);
+                    self.logger.log('it is custom setTimeout ' + promiseIndex);
                     callback();
                     resolve(promiseIndex);
                 }, delay);
@@ -37,7 +46,7 @@ export default class AsyncFunctionsExecutor {
                         if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                             const promiseIndex = count++;
                             const promise = new Promise((resolve, reject) => {
-                                customLogger.log(
+                                self.logger.log(
                                     `It is custom onreadystatechange resolved  ${promiseIndex} ${ xhr.responseURL}`);
                                 onreadystatechange.call(this, a);
                                 resolve(promiseIndex);
@@ -54,7 +63,7 @@ export default class AsyncFunctionsExecutor {
                     xhr.onerror = function (a) {
                         const promiseIndex = count++;
                         const promise = new Promise((resolve, reject) => {
-                            customLogger.log(
+                            self.logger.log(
                                 `It is custom onreadystatechange rejected  ${promiseIndex} ${ xhr.responseURL}`);
                             onerror.call(this, a);
                             resolve(promiseIndex);
@@ -69,7 +78,7 @@ export default class AsyncFunctionsExecutor {
 
         const waitSetTimeOuts = () => {
             return Promise.all(_.map(waitFor, 'promise')).then((values) => {
-                customLogger.log(values);
+                self.logger.log(values);
                 waitFor = _.filter(waitFor, (promiseEl) => {
                     return values.indexOf(promiseEl.promiseIndex) === -1;
                 })

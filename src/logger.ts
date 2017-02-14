@@ -1,6 +1,8 @@
 'use strict'
 
-export default class CustomLogger {
+import * as ILogger from 'i-logger';
+
+export default class CustomLogger implements ILogger {
     private static _instance: CustomLogger = new CustomLogger();
 
     private debugHtml;
@@ -22,12 +24,8 @@ export default class CustomLogger {
         this.debugHtml.push(msg);
     }
 
-    public printError(msg) {
-        console.log(`Error: ${msg}`);
-        this.debugHtml.push(msg);
-    }
-
     public getDebugHtml() {
         return this.debugHtml;
     }
 }
+

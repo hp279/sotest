@@ -9,8 +9,8 @@ import SampleFunctions from 'sample-functions';
 
 window.onload = function () {
     const customLogger = CustomLogger.getInstance();
-    const sampleFunctions = new SampleFunctions();
-    const functionsExecutor = new AsyncFunctionsExecutor();
+    const sampleFunctions = new SampleFunctions(customLogger);
+    const functionsExecutor = new AsyncFunctionsExecutor(customLogger);
 
     functionsExecutor.waitForAll(sampleFunctions.funcArray()).then((executionTime) => {
         customLogger.log(`Completed! Execution time ${executionTime} ms`);
@@ -27,4 +27,3 @@ window.onload = function () {
         }, 100);
     })
 };
-
