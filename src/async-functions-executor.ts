@@ -23,7 +23,7 @@ export default class AsyncFunctionsExecutor {
         let waitFor = [];
 
         window._oldSetTimeout = window.setTimeout;
-        window.setTimeout = function(closureOrText, delay) {
+        window.setTimeout = function (closureOrText, delay) {
             const funcArgs = [];
             for (let index = 2; index < arguments.length; index++) {
                 funcArgs.push(arguments[index]);
@@ -35,7 +35,7 @@ export default class AsyncFunctionsExecutor {
                 }
                 else {
                     //hack for IE system functions
-                  callback = _timeoutCallbackForSystemFunction(closureOrText, funcArgs);
+                    callback = _timeoutCallbackForSystemFunction(closureOrText, funcArgs);
                 }
             }
             else {
@@ -58,14 +58,14 @@ export default class AsyncFunctionsExecutor {
             waitFor.push({promiseIndex: promiseIndex, promise: promise});
         };
 
-        window._timeoutCallback = function(closure, argArray) {
-            return function() {
+        window._timeoutCallback = function (closure, argArray) {
+            return function () {
                 closure.apply(this, argArray);
             };
         };
 
-        window._timeoutCallbackForSystemFunction = function(closure, argArray) {
-            return function() {
+        window._timeoutCallbackForSystemFunction = function (closure, argArray) {
+            return function () {
                 if (argArray.length == 1) {
                     closure(argArray[0]);
                 }
@@ -81,50 +81,48 @@ export default class AsyncFunctionsExecutor {
         !function (send) {
             XMLHttpRequest.prototype.send = function (data) {
                 const xhr = this;
-
-                !function (onreadystatechange) {
-                    xhr.onreadystatechange = function (a) {
-                        if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                            const promiseIndex = count++;
-                            const promise = new Promise((resolve, reject) => {
-                                self.logger.log(
-                                    `It is custom onreadystatechange resolved <b>${promiseIndex}</b> ${ xhr.responseURL}`);
+                const promiseIndex = count++;
+                const promise = new Promise(function (resolve, reject) {
+                    !function (onreadystatechange) {
+                        xhr.onreadystatechange = function (a) {
+                            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
                                 try {
                                     onreadystatechange.call(this, a);
                                 } finally {
                                     self.logger.log(`<span style="color: blue">${promiseIndex} resolved NOW!</span>`);
                                     resolve(promiseIndex);
                                 }
-                            })
-                            self.logger.log(`<span style="color: blueviolet">${promiseIndex} promise was created NOW!</span>`);
-                            waitFor.push({promiseIndex: promiseIndex, promise: promise});
-                        }
-                        else {
-                            onreadystatechange.call(this, a);
-                        }
+                            }
+                            else {
+                                try {
+                                    onreadystatechange.call(this, a);
+                                } catch (e) {
+                                    debugger;
+                                    self.logger.log(`<span style="color: darkblue">${promiseIndex} resolved (reject) NOW!</span>`);
+                                    resolve(promiseIndex);
+                                }
+                            }
 
-                    }
-                }(xhr.onreadystatechange);
+                        }
+                    }(xhr.onreadystatechange);
 
-                !function (onerror) {
-                    xhr.onerror = function (a) {
-                        const promiseIndex = count++;
-                        const promise = new Promise((resolve, reject) => {
-                            self.logger.log(
-                                `It is custom onreadystatechange rejected <b>${promiseIndex}</b> ${ xhr.responseURL}`);
+                    !function (onerror) {
+                        xhr.onerror = function (a) {
                             try {
                                 onerror.call(this, a);
                             } finally {
-                                self.logger.log(`<span style="color: blue"><b>${promiseIndex}</b> resolved NOW!</span>`);
+                                debugger;
+                                self.logger.log(`<span style="color: darkblue"><b>${promiseIndex}</b> resolved (reject) NOW!</span>`);
                                 resolve(promiseIndex);
                             }
-                        })
-                        self.logger.log(`<span style="color: darkmagenta">${promiseIndex} promise was created NOW!</span>`);
-                        waitFor.push({promiseIndex: promiseIndex, promise: promise});
-                    }
-                }(xhr.onreadystatechange);
+                        }
+                    }(xhr.onreadystatechange);
 
-                send.call(xhr, data);
+                    send.call(xhr, data);
+                });
+
+                self.logger.log(`<span style="color: blueviolet">${promiseIndex} promise was created NOW!</span>`);
+                waitFor.push({promiseIndex: promiseIndex, promise: promise});
             }
         }(XMLHttpRequest.prototype.send);
 
