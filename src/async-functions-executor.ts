@@ -22,7 +22,7 @@ export default class AsyncFunctionsExecutor {
         const start = new Date().getTime();
         let waitFor = [];
 
-        window._oldSetTimeout = window.setTimeout;
+        const originSetTimeout = window.setTimeout;
         window.setTimeout = function (closureOrText, delay) {
             const funcArgs = [];
             for (let index = 2; index < arguments.length; index++) {
@@ -30,21 +30,14 @@ export default class AsyncFunctionsExecutor {
             }
             let callback = closureOrText;
             if (arguments.length <= 2 || typeof closureOrText != "function") {
-                if (arguments.length <= 2 || typeof closureOrText == "string") {
-                    callback = closureOrText;
-                }
-                else {
-                    //hack for IE system functions
-                    callback = _timeoutCallbackForSystemFunction(closureOrText, funcArgs);
-                }
-            }
-            else {
-                callback = _timeoutCallback(closureOrText, funcArgs);
+                callback = closureOrText;
+            } else {
+                callback = timeoutCallback(closureOrText, funcArgs);
             }
 
             const promiseIndex = count++;
             const promise = new Promise((resolve, reject) => {
-                _oldSetTimeout(() => {
+                originSetTimeout(() => {
                     self.logger.log(`it is custom setTimeout <b>${promiseIndex}</b>`);
                     try {
                         callback();
@@ -58,23 +51,9 @@ export default class AsyncFunctionsExecutor {
             waitFor.push({promiseIndex: promiseIndex, promise: promise});
         };
 
-        window._timeoutCallback = function (closure, argArray) {
+        const timeoutCallback = function (closure, argArray) {
             return function () {
                 closure.apply(this, argArray);
-            };
-        };
-
-        window._timeoutCallbackForSystemFunction = function (closure, argArray) {
-            return function () {
-                if (argArray.length == 1) {
-                    closure(argArray[0]);
-                }
-                else if (argArray.length == 2) {
-                    closure(argArray[0], argArray[1]);
-                }
-                else {
-                    alert("WARN:  Too many arguments passed to system function; timeout callback not executed!");
-                }
             };
         };
 
@@ -97,7 +76,6 @@ export default class AsyncFunctionsExecutor {
                                 try {
                                     onreadystatechange.call(this, a);
                                 } catch (e) {
-                                    debugger;
                                     self.logger.log(`<span style="color: darkblue">${promiseIndex} resolved (reject) NOW!</span>`);
                                     resolve(promiseIndex);
                                 }
@@ -111,7 +89,6 @@ export default class AsyncFunctionsExecutor {
                             try {
                                 onerror.call(this, a);
                             } finally {
-                                debugger;
                                 self.logger.log(`<span style="color: darkblue"><b>${promiseIndex}</b> resolved (reject) NOW!</span>`);
                                 resolve(promiseIndex);
                             }
@@ -148,7 +125,7 @@ export default class AsyncFunctionsExecutor {
         })
 
         const revertOrigins = () => {
-            window.setTimeout = window._oldSetTimeout;
+            window.setTimeout = originSetTimeout;
         }
 
         return waitSetTimeOuts().then(() => {

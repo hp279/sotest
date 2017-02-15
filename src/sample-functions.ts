@@ -132,6 +132,12 @@ export default class SampleFunctions {
         xhr.send(null);
     }
 
+    private func9(text) {
+        const self = this;
+        self.logger.log('<b style="color: green">Call func9: simple setTimeout with parameters</b>');
+        setTimeout(self.logger.log.bind(self.logger), 3000, text);
+    }
+
     public funcArray() {
         const fns = [];
 
@@ -143,6 +149,7 @@ export default class SampleFunctions {
         fns.push(this.func6.bind(this));
         fns.push(this.func7.bind(this));
         fns.push(this.func8.bind(this));
+        fns.push(this.func9.bind(this, '<b>HERE TIMEOUT WITH FUNCTION REFERENCE + PARAMETERS</b>'));
 
         return fns;
     }
