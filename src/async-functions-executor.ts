@@ -129,10 +129,8 @@ export default class AsyncFunctionsExecutor {
         }
 
         return waitSetTimeOuts().then(() => {
-            return Promise.all(array).then(() => {
-                revertOrigins();
-                return (new Date().getTime() - start);
-            })
+            revertOrigins();
+            return (new Date().getTime() - start);
         }).catch(function (error) {
             revertOrigins();
         });
