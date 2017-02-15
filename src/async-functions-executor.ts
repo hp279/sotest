@@ -131,7 +131,7 @@ export default class AsyncFunctionsExecutor {
         return waitSetTimeOuts().then(() => {
             revertOrigins();
             return (new Date().getTime() - start);
-        }).catch(function (error) {
+        }).catch(function () {
             revertOrigins();
         });
     }

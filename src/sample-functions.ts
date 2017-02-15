@@ -138,6 +138,27 @@ export default class SampleFunctions {
         setTimeout(self.logger.log.bind(self.logger), 3000, text);
     }
 
+    private func10() {
+        const self = this;
+        self.logger.log('<b style="color: green">Call func10: xhr sync</b>');
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'https://jsonplaceholder.typicode.com/posts', false);
+
+        try {
+            xhr.send(null);
+
+            if (xhr.status === 200 && xhr.readyState === XMLHttpRequest.DONE) {
+                self.logger.log('func 10 1!');
+                const toShow = 1000;
+                self.logger.log(xhr.responseText.substring(0, toShow) +
+                    (xhr.responseText.length > toShow ? '...' : ''));
+            }
+        } catch (e) {
+            self.logger.log(`Error: ${e}`);
+        }
+    }
+
+
     public funcArray() {
         const fns = [];
 
@@ -150,6 +171,7 @@ export default class SampleFunctions {
         fns.push(this.func7.bind(this));
         fns.push(this.func8.bind(this));
         fns.push(this.func9.bind(this, '<b>HERE TIMEOUT WITH FUNCTION REFERENCE + PARAMETERS</b>'));
+        fns.push(this.func10.bind(this));
 
         return fns;
     }
