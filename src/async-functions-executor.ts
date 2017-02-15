@@ -62,27 +62,33 @@ export default class AsyncFunctionsExecutor {
                 const xhr = this;
                 const promiseIndex = count++;
                 const promise = new Promise(function (resolve, reject) {
-                    !function (onreadystatechange) {
-                        xhr.onreadystatechange = function (a) {
-                            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                                try {
-                                    onreadystatechange.call(this, a);
-                                } finally {
-                                    self.logger.log(`<span style="color: blue">${promiseIndex} resolved NOW!</span>`);
-                                    resolve(promiseIndex);
+                    if (xhr.onreadystatechange) {
+                        !function (onreadystatechange) {
+                            xhr.onreadystatechange = function (a) {
+                                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                                    try {
+                                        onreadystatechange.call(this, a);
+                                    } finally {
+                                        self.logger.log(`<span style="color: blue">${promiseIndex} resolved NOW!</span>`);
+                                        resolve(promiseIndex);
+                                    }
                                 }
-                            }
-                            else {
-                                try {
-                                    onreadystatechange.call(this, a);
-                                } catch (e) {
-                                    self.logger.log(`<span style="color: darkblue">${promiseIndex} resolved (reject) NOW!</span>`);
-                                    resolve(promiseIndex);
+                                else {
+                                    try {
+                                        onreadystatechange.call(this, a);
+                                    } catch (e) {
+                                        self.logger.log(`<span style="color: darkblue">${promiseIndex} resolved (reject) NOW!</span>`);
+                                        resolve(promiseIndex);
+                                    }
                                 }
-                            }
 
+                            }
                         }
-                    }(xhr.onreadystatechange);
+                        (xhr.onreadystatechange);
+                    } else {
+                        self.logger.log(`<span style="color: blue">${promiseIndex} (sych xrh) resolved NOW!</span>`);
+                        resolve(promiseIndex);
+                    }
 
                     !function (onerror) {
                         xhr.onerror = function (a) {
@@ -111,6 +117,9 @@ export default class AsyncFunctionsExecutor {
                         `Promise with index <b>${promiseIndex}</b> was resolved!`);
                 })
 
+                // we can avoid using of promiseIndexes here (and remove count and all related code), and do the next:
+                // waitFor = waitFor.splice(0, promiseIndexes.length) (or empty values.length)
+                // but promiseIndexes gets additional debug info for now
                 waitFor = _.filter(waitFor, (promiseEl) => {
                     return promiseIndexes.indexOf(promiseEl.promiseIndex) === -1;
                 })

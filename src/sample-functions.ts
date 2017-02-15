@@ -14,6 +14,24 @@ export default class SampleFunctions {
         }
     }
 
+    public funcArray() {
+        const fns = [];
+
+        fns.push(this.func1.bind(this, ['Hello', 'Bonjour', 'Guten Tag']));
+        fns.push(this.func2.bind(this));
+        fns.push(this.func3.bind(this));
+        fns.push(this.func4.bind(this));
+        fns.push(this.func5.bind(this));
+        fns.push(this.func6.bind(this));
+        fns.push(this.func7.bind(this));
+        fns.push(this.func8.bind(this));
+        fns.push(this.func9.bind(this, '<b>HERE TIMEOUT WITH FUNCTION REFERENCE + PARAMETERS</b>'));
+        fns.push(this.func10.bind(this));
+        fns.push(this.func11.bind(this, '<b>SETINTERVAL SHOULD BE IGNORED by AsyncFunctionsExecutor.waitForAll</b>'));
+
+        return fns;
+    }
+
     private func1(arr) {
         const self = this;
         self.logger.log('<b style="color: green">Call func1: simple setTimeout in the loop</b>');
@@ -158,22 +176,10 @@ export default class SampleFunctions {
         }
     }
 
-
-    public funcArray() {
-        const fns = [];
-
-        fns.push(this.func1.bind(this, ['Hello', 'Bonjour', 'Guten Tag']));
-        fns.push(this.func2.bind(this));
-        fns.push(this.func3.bind(this));
-        fns.push(this.func4.bind(this));
-        fns.push(this.func5.bind(this));
-        fns.push(this.func6.bind(this));
-        fns.push(this.func7.bind(this));
-        fns.push(this.func8.bind(this));
-        fns.push(this.func9.bind(this, '<b>HERE TIMEOUT WITH FUNCTION REFERENCE + PARAMETERS</b>'));
-        fns.push(this.func10.bind(this));
-
-        return fns;
+    private func11(text) {
+        const self = this;
+        self.logger.log('<b style="color: green">Call func11: setInterval/ ignore it</b>');
+        setInterval(self.logger.log.bind(self.logger), 500, text);
     }
 }
 
